@@ -11,7 +11,7 @@ import threading
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
-
+import uuid
 # ------------------------------------------
 # 🟢 Load environment variables
 # ------------------------------------------
@@ -220,11 +220,6 @@ def index():
     })
 
 
-@app.route("/uploads/<path:filename>")
-def serve_uploaded_file(filename):
-    return send_from_directory(".", filename, as_attachment=False)
-
-
 @app.route("/status", methods=["GET"])
 def get_status():
     return jsonify({
@@ -257,6 +252,9 @@ def generate_story():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 @app.route("/upload", methods=["POST"])
 def handle_video():
     global processing_status, final_result
@@ -265,27 +263,39 @@ def handle_video():
         return jsonify({"error": "No video uploaded"}), 400
 
     file = request.files["video"]
-    filename = "uploaded.mp4"
-    file.save(filename)
+    ext = os.path.splitext(file.filename)[1]  # .mp4, .mov, etc.
+    unique_filename = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+    file.save(file_path)
 
-    video_url = f"http://127.0.0.1:5000/uploads/{filename}"
+    # Generate thumbnail (first frame)
+    thumbnail_filename = f"{uuid.uuid4().hex}.jpg"
+    thumbnail_path = os.path.join(UPLOAD_FOLDER, thumbnail_filename)
+    cap = cv2.VideoCapture(file_path)
+    ret, frame = cap.read()
+    if ret:
+        cv2.imwrite(thumbnail_path, frame)
+    cap.release()
 
-    # Reset statuses
+    video_url = f"http://127.0.0.1:10000/uploads/{unique_filename}"
+    thumbnail_url = f"http://127.0.0.1:10000/uploads/{thumbnail_filename}"
+
+    # Reset processing status
     for k in processing_status:
         processing_status[k] = "pending"
     final_result.clear()
 
-    # Background processing
+    # Background processing (same as before)
     def process_video():
         global processing_status, final_result
         try:
             processing_status["objectDetection"] = "processing"
-            objects_raw = detect_objects(filename)
+            objects_raw = detect_objects(file_path)
             objects_labels = [o["label"] for o in objects_raw]
             processing_status["objectDetection"] = "completed"
 
             processing_status["emotionAnalysis"] = "processing"
-            dominant_emotion = detect_emotion(filename)
+            dominant_emotion = detect_emotion(file_path)
             processing_status["emotionAnalysis"] = "completed"
 
             processing_status["musicRecommendation"] = "processing"
@@ -317,8 +327,14 @@ def handle_video():
 
     return jsonify({
         "message": "Video upload accepted",
-        "video_url": video_url
+        "video_url": video_url,
+        "thumbnail_url": thumbnail_url
     })
+
+# Serve uploaded videos
+@app.route("/uploads/<path:filename>")
+def serve_uploaded_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=False)
 # ======================================================
 # Run App
 # ======================================================
