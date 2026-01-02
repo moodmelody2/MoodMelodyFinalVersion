@@ -79,26 +79,30 @@ export default function Processing() {
 
       {/* 🎥 Video or Placeholder */}
       <div className="uploads-flex">
-        {videoUrl ? (
-          <video
-            src={videoUrl}
-            className="video-preview"
-            controls
-            autoPlay
-            muted
-            loop
-            width="380"
-            height="270"
-          />
-        ) : (
-          <img
-            src={`${process.env.PUBLIC_URL}/fyp-images/vedio.jpg`}
-            alt="Video Placeholder"
-            className="vedio-icon"
-          />
-        )}
-        <h3 className="keyword-heading">Keyword = “{keyword}”</h3>
-      </div>
+  {videoUrl ? (
+    <video
+      src={videoUrl}
+      className="video-preview"
+      controls
+      autoPlay
+      muted
+      loop
+      width="380"
+      height="270"
+    />
+  ) : (
+    // Show thumbnail if video not ready
+    <img
+      src={localStorage.getItem("uploaded_thumbnail_url")}
+      alt="Video Thumbnail"
+      className="video-preview"
+      width="380"
+      height="270"
+    />
+  )}
+  <h3 className="keyword-heading">Keyword = “{keyword}”</h3>
+</div>
+
 
       {/* 📊 Progress Bar */}
       <div className="progress-bar">

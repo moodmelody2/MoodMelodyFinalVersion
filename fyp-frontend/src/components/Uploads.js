@@ -57,9 +57,11 @@ function Upload() {
 
       if (!res.ok) throw new Error(await res.text());
 
-      const data = await res.json();
-      const videoURL = data.video_url || URL.createObjectURL(selectedFile);
-      localStorage.setItem("uploaded_video_url", videoURL);
+     const data = await res.json();
+localStorage.setItem("uploaded_video_url", data.video_url);
+localStorage.setItem("uploaded_thumbnail_url", data.thumbnail_url);
+navigate("/keyword");
+
 
       Swal.fire({
         toast: true,

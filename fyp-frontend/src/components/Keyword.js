@@ -8,41 +8,48 @@ const [keyword, setKeyword] = useState("");
 const [activeExample, setActiveExample] = useState(0);
 const navigate = useNavigate();
 // Handle input change
-const handleChange = (e) => setKeyword(e.target.value);
+const handleChange = (e) => {
+  const value = e.target.value.trim().split(" ")[0]; // take only first word
+  setKeyword(value);
+};
 // Handle keyword submission
 const handleSubmit = (e) => {
-e.preventDefault();
-if (!keyword.trim()) {
-  return Swal.fire({
+  e.preventDefault();
+
+  if (!keyword.trim()) {
+    return Swal.fire({
+      toast: true,
+      position: 'top',
+      icon: 'warning',
+      title: 'No Keyword',
+      text: 'Please enter a keyword!',
+      showConfirmButton: true,
+      confirmButtonColor: '#3b8e75ff',
+      width: '300px',
+      padding: '0.8rem',
+      background: '#ffffffff'
+    });
+  }
+
+ // Save only first word
+  const singleWordKeyword = keyword.trim().split(" ")[0];
+
+  localStorage.setItem("selectedKeyword", singleWordKeyword);
+
+  Swal.fire({
     toast: true,
     position: 'top',
-    icon: 'warning',
-    title: 'No Keyword',
-    text: 'Please enter a keyword!',
+    icon: 'success',
+    title: 'Keyword Saved!',
+    text: `Your inspiration keyword "${singleWordKeyword}" is saved 🎵`,
     showConfirmButton: true,
     confirmButtonColor: '#3b8e75ff',
     width: '300px',
     padding: '0.8rem',
     background: '#ffffffff'
+  }).then(() => {
+    navigate("/processing");
   });
-}
-
-localStorage.setItem("selectedKeyword", keyword);
-
-Swal.fire({
-  toast: true,
-  position: 'top',
-  icon: 'success',
-  title: 'Keyword Saved!',
-  text: 'Your inspiration keyword is saved 🎵',
-  showConfirmButton: true,
-  confirmButtonColor: '#3b8e75ff',
-  width: '300px',
-  padding: '0.8rem',
-  background: '#ffffffff'
-}).then(() => {
-  navigate("/processing");
-});
 };
 // Handle suggested keyword selection
 const handleSelect = (value) => setKeyword(value);
